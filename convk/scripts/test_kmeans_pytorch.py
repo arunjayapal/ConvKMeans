@@ -14,27 +14,32 @@ import torchvision
 import torchvision.transforms as transforms
 
 from convk.kmeans import ConvKMeans
+from convk.utils import load_cifar10
 
 batch_size = 64
 num_iteration = 30
 # prepare data
-transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-root_path = os.path.join(os.environ["HOME"], "share")
-testset = torchvision.datasets.CIFAR10(root=root_path, train=False,
-                                       download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
-                                         shuffle=False, num_workers=2)
+#  transform = transforms.Compose(
+#      [transforms.ToTensor(),
+#       transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+#  root_path = os.path.join(os.environ["HOME"], "share")
+#  testset = torchvision.datasets.CIFAR10(root=root_path, train=False,
+#                                         download=True, transform=transform)
+#  testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
+#                                           shuffle=False, num_workers=2)
+#
+#  test_loader = torch.utils.data.DataLoader(
+#      torchvision.datasets.MNIST(
+#          root_path, train=False, download=True,
+#          transform=transforms.Compose([
+#              transforms.ToTensor(),
+#              transforms.Normalize((0.1307,), (0.3081,))
+#          ])),
+#      batch_size=batch_size, shuffle=False, num_workers=2)
 
-test_loader = torch.utils.data.DataLoader(
-    torchvision.datasets.MNIST(
-        root_path, train=False, download=True,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))
-        ])),
-    batch_size=batch_size, shuffle=False, num_workers=2)
+X_train, _, X_test, _, _ = load_cifar10()
+
+print (X_train.shape)
 
 
 # visualize data
