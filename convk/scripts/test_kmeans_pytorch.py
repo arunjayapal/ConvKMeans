@@ -71,7 +71,7 @@ def imshow(img):
 input_shape = (batch_size, 3, 32, 32)
 
 model = ConvKMeans(input_shape, 64, (8, 8), stride=4,
-                   padding="same", groups=1, bias=False)
+                   padding="same", groups=1, bias=False, lr=0.1)
 
 trained_kernel = model.kernel.clone()
 trained_kernel_max = trained_kernel.abs().max()
@@ -85,7 +85,7 @@ plt.show()
 
 for iteration in range(num_iteration):
     prev_kernel = model.kernel.clone()
-    for _ in xrange(10):
+    for _ in xrange(30):
         X = torch.autograd.Variable(torch.Tensor(generator.next()),
                                     volatile=True)
         model(X)
