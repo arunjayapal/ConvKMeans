@@ -29,6 +29,7 @@ class ConvKMeans(nn.Module):
             self.padding = 0
         elif padding == "same":
             self.padding = (kernel_size[0] - 1)//2
+            self.zero_pad = nn.ZeroPad2d(self.padding)
         self.groups = groups
         self.bias = bias
         self.batch_size = input_shape[0]
@@ -69,12 +70,15 @@ class ConvKMeans(nn.Module):
         # swap hidden output to be back kernel
         hid_out = hid_out.permute(1, 0, 2, 3)
         new_x = x.permute(1, 0, 2, 3)
-        bound = (hid_out.size()[2]-1)*self.stride+self.kernel_size[0]
+        bound = (hid_out.size()[2]-1)*self.stride + \
+            self.kernel_size[0]
+        if self.padding != 0:
+            new_x = self.zero_pad(new_x)
         new_x = new_x[:, :, :bound, :bound]
 
         kernel_out = F.conv2d(new_x, hid_out,
                               stride=1,
-                              padding=self.padding,
+                              padding=0,
                               dilation=self.stride,
                               groups=self.groups)
         kernel_out = kernel_out.permute(1, 0, 2, 3)

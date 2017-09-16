@@ -17,10 +17,7 @@ run:
 test:
 	PYTHONPATH=$(PYTHONPATH) python 
 
-test-kmeans-optimizer:
-	PYTHONPATH=$(PYTHONPATH) python ./convk/scripts/test_kmeans_optimizer.py
-
 test-kmeans-pytorch:
-	PYTHONPATH=$(PYTHONPATH) python ./convk/scripts/test_kmeans_pytorch.py
+	KERAS_BACKEND=theano PYTHONPATH=$(PYTHONPATH) python ./convk/scripts/test_kmeans_pytorch.py
 
 cleanall:
