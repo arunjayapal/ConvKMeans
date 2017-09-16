@@ -70,7 +70,7 @@ def imshow(img):
 # define input shape
 input_shape = (batch_size, 3, 32, 32)
 
-model = ConvKMeans(input_shape, 32, (5, 5), stride=3,
+model = ConvKMeans(input_shape, 64, (8, 8), stride=4,
                    padding="same", groups=1, bias=False)
 
 trained_kernel = model.kernel.clone()
