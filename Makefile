@@ -20,4 +20,7 @@ test:
 test-kmeans-optimizer:
 	PYTHONPATH=$(PYTHONPATH) python ./convk/scripts/test_kmeans_optimizer.py
 
+test-kmeans-pytorch:
+	PYTHONPATH=$(PYTHONPATH) python ./convk/scripts/test_kmeans_pytorch.py
+
 cleanall:

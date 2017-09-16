@@ -1,61 +1,82 @@
-"""K-means optimizer.
+"""A PyTorch implementation of the Convolutional K-means.
 
 Author: Yuhuang Hu
 Email : duguyue100@gmail.com
 """
-import keras.backend as K
+import math
+import torch
+from torch.autograd import Variable
+import torch.nn as nn
+import torch.nn.functional as F
 
 
-class KMeansOptimizer(object):
-    """K-Means Optimizer."""
+class ConvKMeans(nn.Module):
+    """ConvKMeans."""
 
-    def __init__(self, model):
-        """General K-means Optimizer.
+    def __init__(self, input_shape, out_channels, kernel_size,
+                 stride=1, padding=0, dilation=1, groups=1, bias=False):
+        """Conv K-Means."""
+        super(ConvKMeans, self).__init__()
 
-        Assume a sequential model
+        # set all parameters
+        self.input_shape = input_shape
+        self.in_channels = input_shape[1]
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        self.dilation = dilation
+        self.groups = groups
+        self.bias = bias
+        self.batch_size = input_shape[0]
+        self.back_kernel_size = (input_shape[2]-kernel_size[0]+1,
+                                 input_shape[3]-kernel_size[1]+1)
 
-        Parameters
-        ----------
-        """
-        self.model = model
+        # create parameter
+        self.kernel = Variable(
+            torch.Tensor(self.out_channels,
+                         self.in_channels // self.groups,
+                         *self.kernel_size))
+        if self.bias:
+            self.bias = Variable(torch.Tensor(out_channels))
+        else:
+            self.bias = None
+        self.reset_parameters()
 
-        # collect all relevant layers
-        self.layer_idx = []
-        for idx in range(len(model.layers)):
-            if "kmeans" in model.layers[idx].name:
-                self.layer_idx.append(idx)
+    def reset_parameters(self):
+        n = self.in_channels
+        for k in self.kernel_size:
+            n *= k
+        stdv = 1. / math.sqrt(n)
+        self.kernel.data.uniform_(-stdv, stdv)
+        if self.bias is not None:
+            self.bias.data.uniform_(-stdv, stdv)
 
-    def perform_iteration(self, data_batch):
-        """Updates parameters."""
+    def forward(self, x):
+        # forward pass
+        hid_out = F.conv2d(x, self.kernel,
+                           stride=self.stride,
+                           padding=self.padding,
+                           dilation=self.dilation,
+                           groups=self.groups)
 
-        inputs = data_batch
-        for idx in range(len(self.layer_idx)):
-            # get layer
-            if idx == 0:
-                # first k means layer
-                layer_input = self.model.layers[0].input
-            else:
-                # otherwise use layer input
-                layer_input = self.model.layers[self.layer_idx[idx]].input
-            # layer output
-            layer_output = self.model.layers[self.layer_idx[idx]].output
-            # prepare next input
-            if idx != len(self.layer_idx)-1:
-                next_input_idx = self.layer_idx[idx+1]-1
-                next_input = self.model.layers[next_input_idx].output
+        # select the highest
+        hid_out = hid_out*(hid_out >= hid_out.max(1, keepdim=True)[0]).float()
+        # swap hidden output to be back kernel
+        hid_out = hid_out.permute(1, 0, 2, 3)
+        new_x = x.permute(1, 0, 2, 3)
 
-            # forward function
-            forward_fun = K.function([self.model.layers[idx].input,
-                                      K.learning_phase()],
-                                     [self.model.layers[idx].output])
-            # backward pass
+        kernel_out = F.conv2d(new_x, hid_out,
+                              stride=self.stride,
+                              padding=self.padding,
+                              dilation=self.dilation,
+                              groups=self.groups)
+        kernel_out = kernel_out.permute(1, 0, 2, 3)
 
-            loss, inputs = kmeans_fun(inputs, 0)
+        # update kernel
+        self.kernel += kernel_out
 
-        pass
-        # get all relevant layer from names
-
-        # iterate layers by their index
-        # build function for output
-
-        # change parameters
+        # normalize kernel
+        norm = self.kernel.view(self.kernel.size()[0], -1).norm(dim=1)
+        norm = norm.view(norm.size()[0], 1, 1, 1).expand_as(self.kernel)
+        self.kernel = self.kernel/norm
