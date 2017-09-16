@@ -17,4 +17,7 @@ run:
 test:
 	PYTHONPATH=$(PYTHONPATH) python 
 
+test-kmeans-optimizer:
+	PYTHONPATH=$(PYTHONPATH) python ./convk/scripts/test_kmeans_optimizer.py
+
 cleanall:
